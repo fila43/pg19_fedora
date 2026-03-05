@@ -38,7 +38,7 @@
 %{!?external_libpq:%global external_libpq 0}
 %{!?upgrade:%global upgrade 1}
 %{!?plpython3:%global plpython3 1}
-%{!?pltcl:%global pltcl 0}
+%{!?pltcl:%global pltcl 1}
 %{!?plperl:%global plperl 1}
 %{!?ssl:%global ssl 1}
 %{!?icu:%global icu 1}
@@ -62,7 +62,7 @@
 Summary: PostgreSQL client programs
 Name: postgresql
 %global majorversion 18
-Version: %{majorversion}.1
+Version: %{majorversion}.3
 Release: 1%{?dist}
 
 # The PostgreSQL license is very similar to other MIT licenses, but the OSI
@@ -75,7 +75,7 @@ Url: http://www.postgresql.org/
 # that this be kept up with the latest minor release of the previous series;
 # but update when bugs affecting pg_dump output are fixed.
 %global prevmajorversion 16
-%global prevversion %{prevmajorversion}.11
+%global prevversion %{prevmajorversion}.13
 %global prev_prefix %{_libdir}/pgsql/postgresql-%{prevmajorversion}
 %global precise_version %{?epoch:%epoch:}%version-%release
 
@@ -452,6 +452,7 @@ EOF
 cat > postgresql.tmpfiles.conf <<EOF
 d /run/postgresql 0755 postgres postgres -
 d /var/lib/pgsql 0700 postgres postgres -
+f /var/lib/pgsql/.bash_profile 0644 postgres postgres - "[ -f /etc/profile ] && source /etc/profile\nPGDATA=/var/lib/pgsql/data\nexport PGDATA"
 EOF
 
 
@@ -1234,6 +1235,15 @@ make -C postgresql-setup-%{setup_version} check
 
 
 %changelog
+* Thu Mar 05 2026 Filip Janus <fjanus@redhat.com> - 18.3-1
+- Update to 18.3
+- Enable pltcl
+- bash-profile fix for imagemode
+- Fix CVE-2026-2004: PostgreSQL intarray missing validation of type of input to selectivity estimator executes arbitrary code
+- Fix CVE-2026-2005: PostgreSQL pgcrypto heap buffer overflow executes arbitrary code
+- Fix CVE-2026-2006: PostgreSQL missing validation of multibyte character length executes arbitrary code
+- Fix CVE-2026-2007: PostgreSQL libpq read out-of-bound buffer error
+
 * Tue Nov 18 2025 Filip Janus <fjanus@redhat.com> - 18.1-1
 - Update to 18.1
 
