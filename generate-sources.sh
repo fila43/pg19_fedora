@@ -3,7 +3,7 @@
 rm sources
 set -e
 spectool -S *.spec | cut -d' ' -f2 \
-    | grep -E -e 'postgresql-.*\.tar\.*' -e 'postgresql.*\.pdf' | sort | \
+    | grep -E -e 'postgresql-.*\.tar\.*' -e 'postgresql.*\.pdf' -e 'pgaudit.*\.tar\.gz' | sort | \
 while read line
 do
     base=`basename "$line"`
