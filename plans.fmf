@@ -1,0 +1,10 @@
+/rhel-gating:
+  plan:
+    import:
+      url: https://pkgs.devel.redhat.com/git/tests/postgresql
+      name: /plans/versioned/postgresql18/gating
+/rhel-no-gating:
+  plan:
+    import:
+      url: https://pkgs.devel.redhat.com/git/tests/postgresql
+      name: /plans/versioned/postgresql18/no-gating
