@@ -29,7 +29,7 @@
 # The base package, the libs package, the devel package, and the server package
 # always get built.
 
-%{!?beta:%global beta 0}
+%{!?beta:%global beta 1}
 
 %{!?test:%global test 1}
 # Disable temporarily to be able to build the package
@@ -61,8 +61,8 @@
 
 Summary: PostgreSQL client programs
 Name: postgresql
-%global majorversion 18
-Version: %{majorversion}.3
+%global majorversion 19
+Version: %{majorversion}beta1
 Release: 1%{?dist}
 
 # The PostgreSQL license is very similar to other MIT licenses, but the OSI
@@ -74,8 +74,8 @@ Url: http://www.postgresql.org/
 # in-place upgrade of an old database.  In most cases it will not be critical
 # that this be kept up with the latest minor release of the previous series;
 # but update when bugs affecting pg_dump output are fixed.
-%global prevmajorversion 16
-%global prevversion %{prevmajorversion}.13
+%global prevmajorversion 18
+%global prevversion %{prevmajorversion}.3
 %global prev_prefix %{_libdir}/pgsql/postgresql-%{prevmajorversion}
 %global precise_version %{?epoch:%epoch:}%version-%release
 
@@ -97,7 +97,8 @@ Source12: https://github.com/devexp-db/postgresql-setup/releases/download/v%{set
 # Those here are just to enforce packagers check that the tarball was downloaded
 # correctly.  Also, this allows us check that packagers-only tarballs do not
 # differ with publicly released ones.
-Source16: https://ftp.postgresql.org/pub/source/v%{version}/postgresql-%{version}.tar.bz2.sha256
+# Note: sha256 not available for beta releases
+#Source16: https://ftp.postgresql.org/pub/source/v%%{version}/postgresql-%%{version}.tar.bz2.sha256
 Source17: https://ftp.postgresql.org/pub/source/v%{prevversion}/postgresql-%{prevversion}.tar.bz2.sha256
 
 # Comments for these patches are in the patch files.
@@ -408,7 +409,7 @@ goal of accelerating analytics queries.
 %prep
 (
   cd "$(dirname "%{SOURCE0}")"
-  sha256sum -c %{SOURCE16}
+  # sha256 check for main tarball skipped (beta release)
 %if %upgrade
   sha256sum -c %{SOURCE17}
 %endif
@@ -825,7 +826,8 @@ find_lang_bins server.lst \
 	initdb pg_basebackup pg_controldata pg_ctl pg_resetwal pg_rewind plpgsql \
 	postgres pg_checksums pg_verifybackup pg_combinebackup pg_walsummary
 find_lang_bins contrib.lst \
-	pg_amcheck pg_archivecleanup pg_test_fsync pg_test_timing pg_waldump
+	pg_amcheck pg_archivecleanup pg_test_fsync pg_test_timing pg_waldump \
+	postgresql-regress
 find_lang_bins main.lst \
 	pg_dump pg_upgrade pgscripts psql \
 %if ! %external_libpq
@@ -975,6 +977,7 @@ make -C postgresql-setup-%{setup_version} check
 %{_datadir}/pgsql/extension/tsm_system_time*
 %{_datadir}/pgsql/extension/unaccent*
 %{_datadir}/pgsql/extension/pg_walinspect*
+%{_datadir}/pgsql/extension/pg_stash_advice*
 %{_libdir}/pgsql/_int.so
 %{_libdir}/pgsql/amcheck.so
 %{_libdir}/pgsql/auth_delay.so
@@ -1037,6 +1040,10 @@ make -C postgresql-setup-%{setup_version} check
 %{_libdir}/pgsql/basebackup_to_shell.so
 %{_libdir}/pgsql/basic_archive.so
 %{_libdir}/pgsql/pg_walinspect.so
+%{_libdir}/pgsql/cyrillic.so
+%{_libdir}/pgsql/pg_plan_advice.so
+%{_libdir}/pgsql/pg_stash_advice.so
+%{_libdir}/pgsql/pgrepack.so
 %{_mandir}/man1/oid2name.*
 %{_mandir}/man1/pg_amcheck.*
 %{_mandir}/man1/pg_archivecleanup.*
@@ -1235,17 +1242,8 @@ make -C postgresql-setup-%{setup_version} check
 
 
 %changelog
-* Thu Mar 05 2026 Filip Janus <fjanus@redhat.com> - 18.3-1
-- Update to 18.3
-- Enable pltcl
-- bash-profile fix for imagemode
-- Fix CVE-2026-2004: PostgreSQL intarray missing validation of type of input to selectivity estimator executes arbitrary code
-- Fix CVE-2026-2005: PostgreSQL pgcrypto heap buffer overflow executes arbitrary code
-- Fix CVE-2026-2006: PostgreSQL missing validation of multibyte character length executes arbitrary code
-- Fix CVE-2026-2007: PostgreSQL libpq read out-of-bound buffer error
-
-* Tue Nov 18 2025 Filip Janus <fjanus@redhat.com> - 18.1-1
-- Update to 18.1
-
-* Wed Oct 01 2025 Lukas Javorsky <ljavorsk@redhat.com> - 18.0-1
-- Initial import of 18.0
+* Sun Jun 14 2026 Filip Janus <fjanus@redhat.com> - 19beta1-1
+- Initial postgresql 19 stream package based on postgresql 18
+- Update to PostgreSQL 19beta1
+- Set prevmajorversion to 18 (upgrade from PG18 only)
+- Add new PG19 contrib modules (cyrillic, pg_plan_advice, pg_stash_advice, pgrepack)
