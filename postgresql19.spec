@@ -64,7 +64,7 @@ Url: http://www.postgresql.org/
 %global prev_prefix %{_libdir}/pgsql/postgresql-%{prevmajorversion}
 %global precise_version %{?epoch:%epoch:}%version-%release
 
-%global setup_version 8.9
+%global setup_version 8.12
 
 %global service_name postgresql.service
 
