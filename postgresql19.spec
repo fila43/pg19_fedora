@@ -895,15 +895,15 @@ upgrade_configure ()
 %endif
 
 %if %pg_repack
-%make_build -C contrib/pg_repack PG_CONFIG=$(pwd)/src/bin/pg_config/pg_config
+%make_build -C contrib/pg_repack PG_CONFIG=$(pwd)/src/bin/pg_config/pg_server_config
 %endif
 
 %if %pgvector
-%make_build -C contrib/pgvector PG_CONFIG=$(pwd)/src/bin/pg_config/pg_config
+%make_build -C contrib/pgvector PG_CONFIG=$(pwd)/src/bin/pg_config/pg_server_config
 %endif
 
 %if %decoderbufs
-%make_build -C contrib/decoderbufs PG_CONFIG=$(pwd)/src/bin/pg_config/pg_config
+%make_build -C contrib/decoderbufs PG_CONFIG=$(pwd)/src/bin/pg_config/pg_server_config
 %endif
 
 
@@ -933,15 +933,15 @@ make -C contrib/pgaudit DESTDIR=$RPM_BUILD_ROOT install
 %endif
 
 %if %pg_repack
-make -C contrib/pg_repack DESTDIR=$RPM_BUILD_ROOT PG_CONFIG=$(pwd)/src/bin/pg_config/pg_config install
+make -C contrib/pg_repack DESTDIR=$RPM_BUILD_ROOT PG_CONFIG=$(pwd)/src/bin/pg_config/pg_server_config install
 %endif
 
 %if %pgvector
-make -C contrib/pgvector DESTDIR=$RPM_BUILD_ROOT PG_CONFIG=$(pwd)/src/bin/pg_config/pg_config install
+make -C contrib/pgvector DESTDIR=$RPM_BUILD_ROOT PG_CONFIG=$(pwd)/src/bin/pg_config/pg_server_config install
 %endif
 
 %if %decoderbufs
-make -C contrib/decoderbufs DESTDIR=$RPM_BUILD_ROOT PG_CONFIG=$(pwd)/src/bin/pg_config/pg_config install
+make -C contrib/decoderbufs DESTDIR=$RPM_BUILD_ROOT PG_CONFIG=$(pwd)/src/bin/pg_config/pg_server_config install
 %endif
 
 # We ship pg_config through libpq-devel
