@@ -39,25 +39,21 @@ diff -urN pg_repack_orig/Makefile pg_repack_patched/Makefile
  	done
 diff -urN pg_repack_orig/bin/Makefile pg_repack_patched/bin/Makefile
 --- pg_repack_orig/bin/Makefile	2026-06-24 11:36:35
-+++ pg_repack_patched/bin/Makefile	2026-06-24 12:20:51
-@@ -6,7 +6,16 @@
++++ pg_repack_patched/bin/Makefile	2026-06-24 12:35:45
+@@ -6,7 +6,11 @@
  #  Portions Copyright (c) 2012-2020, The Reorg Development Team
  #
  
+-PG_CONFIG ?= pg_config
 +ifndef USE_PGXS
 +subdir = contrib/pg_repack/bin
 +top_builddir = ../../..
 +include $(top_builddir)/src/Makefile.global
-+include $(top_srcdir)/contrib/contrib-global.mk
-+else
- PG_CONFIG ?= pg_config
-+PGXS := $(shell $(PG_CONFIG) --pgxs)
-+include $(PGXS)
 +endif
  
  SRCS = pg_repack.c pgut/pgut.c pgut/pgut-fe.c
  OBJS = $(SRCS:.c=.o)
-@@ -25,13 +34,21 @@
+@@ -25,13 +29,28 @@
  
  PG_LIBS = $(libpq)
  
@@ -65,11 +61,11 @@ diff -urN pg_repack_orig/bin/Makefile pg_repack_patched/bin/Makefile
 -# see ticket #179
 -PG_LIBS += -L$(shell $(PG_CONFIG) --pkglibdir)
 +ifndef USE_PGXS
-+all: $(PROGRAM)
++include $(top_srcdir)/contrib/contrib-global.mk
  
 -USE_PGXS = 1	# use pgxs if not in contrib directory
--PGXS := $(shell $(PG_CONFIG) --pgxs)
--include $(PGXS)
++all: $(PROGRAM)
++
 +$(PROGRAM): $(OBJS)
 +	$(CC) $(CFLAGS) $(OBJS) $(PG_LIBS) $(LDFLAGS) $(LDFLAGS_EX) $(LIBS) -o $@$(X)
 +
@@ -81,6 +77,11 @@ diff -urN pg_repack_orig/bin/Makefile pg_repack_patched/bin/Makefile
 +
 +clean:
 +	rm -f $(PROGRAM)$(X) $(OBJS)
++
++else
++PG_CONFIG ?= pg_config
+ PGXS := $(shell $(PG_CONFIG) --pgxs)
+ include $(PGXS)
 +endif
  
  # remove dependency on libxml2, libxslt, and libpam.
