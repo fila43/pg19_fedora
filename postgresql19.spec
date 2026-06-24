@@ -104,6 +104,10 @@ Source23: https://github.com/debezium/postgres-decoderbufs/archive/refs/tags/v3.
 
 # Fix pgaudit compilation with PostgreSQL 19 (VARSIZE_ANY_EXHDR API change)
 Patch20: pgaudit-pg19-compat.patch
+# Enable in-tree builds for PGXS-based extensions
+Patch21: pg_repack-intree-build.patch
+Patch22: pgvector-intree-build.patch
+Patch23: decoderbufs-intree-build.patch
 
 # Comments for these patches are in the patch files.
 Patch1: rpm-pgsql.patch
@@ -659,16 +663,25 @@ popd
 %if %pg_repack
 tar xzf %{SOURCE21}
 mv pg_repack-ver_1.5.3 contrib/pg_repack
+pushd contrib/pg_repack
+%patch 21 -p1
+popd
 %endif
 
 %if %pgvector
 tar xzf %{SOURCE22}
 mv pgvector-0.8.3 contrib/pgvector
+pushd contrib/pgvector
+%patch 22 -p1
+popd
 %endif
 
 %if %decoderbufs
 tar xzf %{SOURCE23}
 mv postgres-decoderbufs-3.5.2.Final contrib/decoderbufs
+pushd contrib/decoderbufs
+%patch 23 -p1
+popd
 %endif
 
 %build
@@ -895,15 +908,15 @@ upgrade_configure ()
 %endif
 
 %if %pg_repack
-%make_build -C contrib/pg_repack PG_CONFIG=$(pwd)/src/bin/pg_config/pg_server_config PGXS=$(pwd)/src/makefiles/pgxs.mk
+%make_build -C contrib/pg_repack
 %endif
 
 %if %pgvector
-%make_build -C contrib/pgvector PG_CONFIG=$(pwd)/src/bin/pg_config/pg_server_config PGXS=$(pwd)/src/makefiles/pgxs.mk
+%make_build -C contrib/pgvector
 %endif
 
 %if %decoderbufs
-%make_build -C contrib/decoderbufs PG_CONFIG=$(pwd)/src/bin/pg_config/pg_server_config PGXS=$(pwd)/src/makefiles/pgxs.mk
+%make_build -C contrib/decoderbufs
 %endif
 
 
@@ -933,15 +946,15 @@ make -C contrib/pgaudit DESTDIR=$RPM_BUILD_ROOT install
 %endif
 
 %if %pg_repack
-make -C contrib/pg_repack DESTDIR=$RPM_BUILD_ROOT PG_CONFIG=$(pwd)/src/bin/pg_config/pg_server_config PGXS=$(pwd)/src/makefiles/pgxs.mk install
+make -C contrib/pg_repack DESTDIR=$RPM_BUILD_ROOT install
 %endif
 
 %if %pgvector
-make -C contrib/pgvector DESTDIR=$RPM_BUILD_ROOT PG_CONFIG=$(pwd)/src/bin/pg_config/pg_server_config PGXS=$(pwd)/src/makefiles/pgxs.mk install
+make -C contrib/pgvector DESTDIR=$RPM_BUILD_ROOT install
 %endif
 
 %if %decoderbufs
-make -C contrib/decoderbufs DESTDIR=$RPM_BUILD_ROOT PG_CONFIG=$(pwd)/src/bin/pg_config/pg_server_config PGXS=$(pwd)/src/makefiles/pgxs.mk install
+make -C contrib/decoderbufs DESTDIR=$RPM_BUILD_ROOT install
 %endif
 
 # We ship pg_config through libpq-devel

@@ -1,0 +1,16 @@
+--- decoderbufs_orig/Makefile	2026-06-24 11:38:21
++++ decoderbufs_patched/Makefile	2026-06-24 11:38:30
+@@ -9,6 +9,13 @@
+ 
+ OBJS = src/decoderbufs.o src/proto/pg_logicaldec.pb-c.o
+ 
++ifndef USE_PGXS
++subdir = contrib/decoderbufs
++top_builddir = ../..
++include $(top_builddir)/src/Makefile.global
++include $(top_srcdir)/contrib/contrib-global.mk
++else
+ PG_CONFIG ?= pg_config
+ PGXS := $(shell $(PG_CONFIG) --pgxs)
+ include $(PGXS)
++endif

@@ -1,0 +1,107 @@
+--- pg_repack_orig/Makefile	2026-06-24 11:36:35
++++ pg_repack_patched/Makefile	2026-06-24 11:36:41
+@@ -6,32 +6,17 @@
+ #  Portions Copyright (c) 2012-2020, The Reorg Development Team
+ #
+ 
+-PG_CONFIG ?= pg_config
+ EXTENSION = pg_repack
+ 
+-.PHONY: dist/$(EXTENSION)-$(EXTVERSION).zip
+-
+-# Pull out PostgreSQL version number from pg_config
+-VERSION := $(shell $(PG_CONFIG) --version | sed 's/.* \([[:digit:].]\{1,\}\).*/\1/')
+-ifeq ("$(VERSION)","")
+-$(error pg_config not found)
+-endif
+-
+-# PostgreSQL version as a number, e.g. 9.1.4 -> 901
+-INTVERSION := $(shell echo $$(($$(echo $(VERSION).0 | sed 's/\([[:digit:]]\{1,\}\)\.\([[:digit:]]\{1,\}\).*/\1*100+\2/'))))
+-
+ # The version number of the library
+ EXTVERSION = $(shell grep '"version":' META.json | head -1 \
+ 	| sed -e 's/[ 	]*"version":[ 	]*"\(.*\)",/\1/')
+ 
+-# NOTE: keep consistent with META.json
+-ifeq ($(shell echo $$(($(INTVERSION) < 904))),1)
+-$(error $(EXTENSION) requires PostgreSQL 9.4 or later. This is $(VERSION))
+-endif
++.PHONY: dist/$(EXTENSION)-$(EXTVERSION).zip
+ 
+ SUBDIRS = bin lib regress
+ 
+-all install installdirs uninstall distprep clean distclean maintainer-clean debug:
++all install installdirs uninstall distprep clean distclean maintainer-clean:
+ 	@for dir in $(SUBDIRS); do \
+ 		$(MAKE) -C $$dir $@ || exit; \
+ 	done
+--- pg_repack_orig/lib/Makefile	2026-06-24 11:36:35
++++ pg_repack_patched/lib/Makefile	2026-06-24 11:36:55
+@@ -6,10 +6,17 @@
+ #  Portions Copyright (c) 2012-2020, The Reorg Development Team
+ #
+ 
++ifndef USE_PGXS
++subdir = contrib/pg_repack/lib
++top_builddir = ../../..
++include $(top_builddir)/src/Makefile.global
++VERSION := $(MAJORVERSION)
++else
+ PG_CONFIG ?= pg_config
+-
+-# version as a number, e.g. 9.1.4 -> 901
+ VERSION := $(shell $(PG_CONFIG) --version | sed 's/.* \([[:digit:].]\{1,\}\).*/\1/')
++PGXS := $(shell $(PG_CONFIG) --pgxs)
++endif
++
+ INTVERSION := $(shell echo $$(($$(echo $(VERSION).0 | sed 's/\([[:digit:]]\{1,\}\)\.\([[:digit:]]\{1,\}\).*/\1*100+\2/'))))
+ 
+ EXTENSION = pg_repack
+@@ -35,9 +42,11 @@
+ 
+ DATA_built = pg_repack--$(REPACK_VERSION).sql pg_repack.control
+ 
+-USE_PGXS = 1
+-PGXS := $(shell $(PG_CONFIG) --pgxs)
++ifdef USE_PGXS
+ include $(PGXS)
++else
++include $(top_srcdir)/contrib/contrib-global.mk
++endif
+ 
+ # remove dependency on libxml2, libxslt, and libpam.
+ # XXX: find a better way to make sure we are linking with libraries
+--- pg_repack_orig/bin/Makefile	2026-06-24 11:36:35
++++ pg_repack_patched/bin/Makefile	2026-06-24 11:37:02
+@@ -6,7 +6,16 @@
+ #  Portions Copyright (c) 2012-2020, The Reorg Development Team
+ #
+ 
++ifndef USE_PGXS
++subdir = contrib/pg_repack/bin
++top_builddir = ../../..
++include $(top_builddir)/src/Makefile.global
++include $(top_srcdir)/contrib/contrib-global.mk
++else
+ PG_CONFIG ?= pg_config
++PGXS := $(shell $(PG_CONFIG) --pgxs)
++include $(PGXS)
++endif
+ 
+ SRCS = pg_repack.c pgut/pgut.c pgut/pgut-fe.c
+ OBJS = $(SRCS:.c=.o)
+@@ -25,14 +34,6 @@
+ 
+ PG_LIBS = $(libpq)
+ 
+-# libs pgport, pgcommon moved somewhere else in some ubuntu version
+-# see ticket #179
+-PG_LIBS += -L$(shell $(PG_CONFIG) --pkglibdir)
+-
+-USE_PGXS = 1	# use pgxs if not in contrib directory
+-PGXS := $(shell $(PG_CONFIG) --pgxs)
+-include $(PGXS)
+-
+ # remove dependency on libxml2, libxslt, and libpam.
+ # XXX: find a better way to make sure we are linking with libraries
+ # from pg_config which we actually need.

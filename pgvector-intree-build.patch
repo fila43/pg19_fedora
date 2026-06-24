@@ -1,0 +1,19 @@
+--- pgvector_orig/Makefile	2026-06-24 11:37:54
++++ pgvector_patched/Makefile	2026-06-24 11:38:06
+@@ -48,9 +48,16 @@
+ sql/$(EXTENSION)--$(EXTVERSION).sql: sql/$(EXTENSION).sql
+ 	cp $< $@
+ 
++ifndef USE_PGXS
++subdir = contrib/pgvector
++top_builddir = ../..
++include $(top_builddir)/src/Makefile.global
++include $(top_srcdir)/contrib/contrib-global.mk
++else
+ PG_CONFIG ?= pg_config
+ PGXS := $(shell $(PG_CONFIG) --pgxs)
+ include $(PGXS)
++endif
+ 
+ # for Mac
+ ifeq ($(PROVE),)
