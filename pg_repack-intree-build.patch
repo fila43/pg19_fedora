@@ -1,5 +1,6 @@
+diff -urN pg_repack_orig/Makefile pg_repack_patched/Makefile
 --- pg_repack_orig/Makefile	2026-06-24 11:36:35
-+++ pg_repack_patched/Makefile	2026-06-24 11:36:41
++++ pg_repack_patched/Makefile	2026-06-24 11:51:24
 @@ -6,32 +6,17 @@
  #  Portions Copyright (c) 2012-2020, The Reorg Development Team
  #
@@ -28,13 +29,50 @@
 -endif
 +.PHONY: dist/$(EXTENSION)-$(EXTVERSION).zip
  
- SUBDIRS = bin lib regress
+-SUBDIRS = bin lib regress
++SUBDIRS = bin lib
  
 -all install installdirs uninstall distprep clean distclean maintainer-clean debug:
 +all install installdirs uninstall distprep clean distclean maintainer-clean:
  	@for dir in $(SUBDIRS); do \
  		$(MAKE) -C $$dir $@ || exit; \
  	done
+diff -urN pg_repack_orig/bin/Makefile pg_repack_patched/bin/Makefile
+--- pg_repack_orig/bin/Makefile	2026-06-24 11:36:35
++++ pg_repack_patched/bin/Makefile	2026-06-24 11:37:02
+@@ -6,7 +6,16 @@
+ #  Portions Copyright (c) 2012-2020, The Reorg Development Team
+ #
+ 
++ifndef USE_PGXS
++subdir = contrib/pg_repack/bin
++top_builddir = ../../..
++include $(top_builddir)/src/Makefile.global
++include $(top_srcdir)/contrib/contrib-global.mk
++else
+ PG_CONFIG ?= pg_config
++PGXS := $(shell $(PG_CONFIG) --pgxs)
++include $(PGXS)
++endif
+ 
+ SRCS = pg_repack.c pgut/pgut.c pgut/pgut-fe.c
+ OBJS = $(SRCS:.c=.o)
+@@ -24,14 +33,6 @@
+ endif
+ 
+ PG_LIBS = $(libpq)
+-
+-# libs pgport, pgcommon moved somewhere else in some ubuntu version
+-# see ticket #179
+-PG_LIBS += -L$(shell $(PG_CONFIG) --pkglibdir)
+-
+-USE_PGXS = 1	# use pgxs if not in contrib directory
+-PGXS := $(shell $(PG_CONFIG) --pgxs)
+-include $(PGXS)
+ 
+ # remove dependency on libxml2, libxslt, and libpam.
+ # XXX: find a better way to make sure we are linking with libraries
+diff -urN pg_repack_orig/lib/Makefile pg_repack_patched/lib/Makefile
 --- pg_repack_orig/lib/Makefile	2026-06-24 11:36:35
 +++ pg_repack_patched/lib/Makefile	2026-06-24 11:36:55
 @@ -6,10 +6,17 @@
@@ -71,37 +109,3 @@
  
  # remove dependency on libxml2, libxslt, and libpam.
  # XXX: find a better way to make sure we are linking with libraries
---- pg_repack_orig/bin/Makefile	2026-06-24 11:36:35
-+++ pg_repack_patched/bin/Makefile	2026-06-24 11:37:02
-@@ -6,7 +6,16 @@
- #  Portions Copyright (c) 2012-2020, The Reorg Development Team
- #
- 
-+ifndef USE_PGXS
-+subdir = contrib/pg_repack/bin
-+top_builddir = ../../..
-+include $(top_builddir)/src/Makefile.global
-+include $(top_srcdir)/contrib/contrib-global.mk
-+else
- PG_CONFIG ?= pg_config
-+PGXS := $(shell $(PG_CONFIG) --pgxs)
-+include $(PGXS)
-+endif
- 
- SRCS = pg_repack.c pgut/pgut.c pgut/pgut-fe.c
- OBJS = $(SRCS:.c=.o)
-@@ -25,14 +34,6 @@
- 
- PG_LIBS = $(libpq)
- 
--# libs pgport, pgcommon moved somewhere else in some ubuntu version
--# see ticket #179
--PG_LIBS += -L$(shell $(PG_CONFIG) --pkglibdir)
--
--USE_PGXS = 1	# use pgxs if not in contrib directory
--PGXS := $(shell $(PG_CONFIG) --pgxs)
--include $(PGXS)
--
- # remove dependency on libxml2, libxslt, and libpam.
- # XXX: find a better way to make sure we are linking with libraries
- # from pg_config which we actually need.
