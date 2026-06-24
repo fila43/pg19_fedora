@@ -32,7 +32,7 @@
 %{!?pgaudit:%global pgaudit 1}
 %{!?pg_repack:%global pg_repack 1}
 %{!?pgvector:%global pgvector 1}
-%{!?decoderbufs:%global decoderbufs 1}
+%{!?decoderbufs:%global decoderbufs 0}
 %{!?postgresql_default:%global postgresql_default 1}
 
 %global majorname postgresql
