@@ -29,7 +29,6 @@
 %{!?sdt:%global sdt 1}
 %{!?selinux:%global selinux 1}
 %{!?runselftest:%global runselftest 1}
-%{!?pgaudit:%global pgaudit 1}
 %{!?postgresql_default:%global postgresql_default 0}
 
 %global majorname postgresql
@@ -87,9 +86,6 @@ Source12: https://github.com/devexp-db/postgresql-setup/releases/download/v%{set
 #Source16: https://ftp.postgresql.org/pub/source/v%%{version}/postgresql-%%{version}.tar.bz2.sha256
 Source17: https://ftp.postgresql.org/pub/source/v%{prevversion}/postgresql-%{prevversion}.tar.bz2.sha256
 
-# pgaudit extension
-Source20: https://github.com/pgaudit/pgaudit/archive/refs/heads/main.tar.gz#/pgaudit-main.tar.gz
-
 # Comments for these patches are in the patch files.
 Patch1: rpm-pgsql.patch
 Patch2: postgresql-logging.patch
@@ -100,9 +96,6 @@ Patch9: postgresql-server-pg_config.patch
 # rhbz#1940964
 Patch10: postgresql-datalayout-mismatch-on-s390.patch
 Patch12: postgresql-no-libecpg.patch
-
-# Fix pgaudit compilation with PostgreSQL 19 (VARSIZE_ANY_EXHDR API change)
-Patch20: pgaudit-pg19-compat.patch
 
 # This macro is used for package names in the files section
 %if %?postgresql_default
@@ -415,26 +408,6 @@ process.
 %endif
 
 
-%if %pgaudit
-%package -n %{pkgname}-pgaudit
-Summary: PostgreSQL Audit Extension
-Requires: %{pkgname}-server%{?_isa} = %precise_version
-Provides: %{pkgname}-pgaudit = %precise_version
-Provides: %{pkgname}-pgaudit%{?_isa} = %precise_version
-
-%virtual_conflicts_and_provides pgaudit
-
-%description -n %{pkgname}-pgaudit
-The PostgreSQL Audit extension (pgaudit) provides detailed session
-and/or object audit logging via the standard PostgreSQL logging
-facility.
-
-The goal of the PostgreSQL Audit extension (pgaudit) is to provide
-PostgreSQL users with capability to produce audit logs often required to
-comply with government, financial, or ISO certifications.
-%endif
-
-
 %if %plperl
 %package -n %{pkgname}-plperl
 Summary: The Perl procedural language for PostgreSQL
@@ -567,14 +540,6 @@ find . -type f -name Makefile -exec sed -i -e "s/SO_MAJOR_VERSION=\s\?\([0-9]\+\
 # apply once SOURCE3 is extracted
 %endif
 
-%if %pgaudit
-tar xzf %{SOURCE20}
-mv pgaudit-main contrib/pgaudit
-pushd contrib/pgaudit
-%patch 20 -p1
-popd
-%endif
-
 # remove .gitignore files to ensure none get into the RPMs (bug #642210)
 find . -type f -name .gitignore | xargs rm
 
@@ -683,10 +648,6 @@ export PYTHON=/usr/bin/python3
 %configure $common_configure_options
 
 %make_build world
-
-%if %pgaudit
-%make_build -C contrib/pgaudit
-%endif
 
 # Have to hack makefile to put correct path into tutorial scripts
 sed "s|C=\`pwd\`;|C=%{_libdir}/pgsql/tutorial;|" < src/tutorial/Makefile > src/tutorial/GNUmakefile
@@ -832,10 +793,6 @@ redhat_sockets_hack no
 EOF
 
 make DESTDIR=$RPM_BUILD_ROOT install-world
-
-%if %pgaudit
-make -C contrib/pgaudit DESTDIR=$RPM_BUILD_ROOT install
-%endif
 
 # We ship pg_config through libpq-devel
 mv $RPM_BUILD_ROOT/%_mandir/man1/pg_{,server_}config.1
@@ -1411,18 +1368,6 @@ make -C postgresql-setup-%{setup_version} check
 %if %test
 %files -n %{pkgname}-test
 %attr(-,postgres,postgres) %{_libdir}/pgsql/test
-%endif
-
-%if %pgaudit
-%files -n %{pkgname}-pgaudit
-%license contrib/pgaudit/LICENSE
-%{_libdir}/pgsql/pgaudit.so
-%if 0%{?postgresql_server_llvmjit}
-%{_libdir}/pgsql/bitcode/pgaudit.index.bc
-%{_libdir}/pgsql/bitcode/pgaudit/pgaudit.bc
-%endif
-%{_datadir}/pgsql/extension/pgaudit--*.sql
-%{_datadir}/pgsql/extension/pgaudit.control
 %endif
 
 
