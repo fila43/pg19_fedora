@@ -30,6 +30,9 @@
 %{!?selinux:%global selinux 1}
 %{!?runselftest:%global runselftest 1}
 %{!?pgaudit:%global pgaudit 1}
+%{!?pg_repack:%global pg_repack 1}
+%{!?pgvector:%global pgvector 1}
+%{!?decoderbufs:%global decoderbufs 1}
 %{!?postgresql_default:%global postgresql_default 1}
 
 %global majorname postgresql
@@ -89,6 +92,15 @@ Source17: https://ftp.postgresql.org/pub/source/v%{prevversion}/postgresql-%{pre
 # pgaudit extension - using main branch until pgaudit 19.0 is released
 # Latest released version is 18.0 (for PG18), main branch targets PG19
 Source20: https://github.com/pgaudit/pgaudit/archive/refs/heads/main.tar.gz#/pgaudit-main.tar.gz
+
+# pg_repack extension
+Source21: https://github.com/reorg/pg_repack/archive/refs/tags/ver_1.5.3.tar.gz#/pg_repack-1.5.3.tar.gz
+
+# pgvector extension
+Source22: https://github.com/pgvector/pgvector/archive/refs/tags/v0.8.3.tar.gz#/pgvector-0.8.3.tar.gz
+
+# postgres-decoderbufs extension
+Source23: https://github.com/debezium/postgres-decoderbufs/archive/refs/tags/v3.5.2.Final.tar.gz#/postgres-decoderbufs-3.5.2.tar.gz
 
 # Fix pgaudit compilation with PostgreSQL 19 (VARSIZE_ANY_EXHDR API change)
 Patch20: pgaudit-pg19-compat.patch
@@ -183,6 +195,10 @@ BuildRequires: libselinux-devel
 
 %if %icu
 BuildRequires:	libicu-devel
+%endif
+
+%if %decoderbufs
+BuildRequires: protobuf-c-devel
 %endif
 
 %if %?postgresql_default
@@ -534,6 +550,53 @@ the PostgreSQL Audit extension (pgaudit) is properly called an audit
 trail or audit log. The term audit log is used in this documentation.
 %endif
 
+%if %pg_repack
+%package -n %{pkgname}-pg-repack
+Summary: Online table reorganization for PostgreSQL
+Requires: %{pkgname}-server%{?_isa} = %precise_version
+Provides: %{pkgname}-pg-repack = %precise_version
+Provides: %{pkgname}-pg-repack%{?_isa} = %precise_version
+
+%virtual_conflicts_and_provides pg-repack
+
+%description -n %{pkgname}-pg-repack
+pg_repack is a PostgreSQL extension which lets you remove bloat from
+tables and indexes, and optionally restore the physical order of
+clustered indexes. Unlike CLUSTER and VACUUM FULL it works online,
+without holding an exclusive lock on the processed tables during
+processing.
+%endif
+
+%if %pgvector
+%package -n %{pkgname}-pgvector
+Summary: Open-source vector similarity search for PostgreSQL
+Requires: %{pkgname}-server%{?_isa} = %precise_version
+Provides: %{pkgname}-pgvector = %precise_version
+Provides: %{pkgname}-pgvector%{?_isa} = %precise_version
+
+%virtual_conflicts_and_provides pgvector
+
+%description -n %{pkgname}-pgvector
+pgvector is an open-source vector similarity search extension for
+PostgreSQL. Store your vectors with the rest of your data. Supports
+exact and approximate nearest neighbor search, L2 distance, inner
+product, cosine distance, and more.
+%endif
+
+%if %decoderbufs
+%package -n %{pkgname}-decoderbufs
+Summary: PostgreSQL Protocol Buffers logical decoder plugin
+Requires: %{pkgname}-server%{?_isa} = %precise_version
+Provides: %{pkgname}-decoderbufs = %precise_version
+Provides: %{pkgname}-decoderbufs%{?_isa} = %precise_version
+
+%virtual_conflicts_and_provides decoderbufs
+
+%description -n %{pkgname}-decoderbufs
+A PostgreSQL logical decoder output plugin to deliver data as
+Protocol Buffers messages. Used by Debezium for Change Data Capture.
+%endif
+
 %prep
 (
   cd "$(dirname "%{SOURCE0}")"
@@ -591,6 +654,21 @@ mv pgaudit-main contrib/pgaudit
 pushd contrib/pgaudit
 %patch 20 -p1
 popd
+%endif
+
+%if %pg_repack
+tar xzf %{SOURCE21}
+mv pg_repack-ver_1.5.3 contrib/pg_repack
+%endif
+
+%if %pgvector
+tar xzf %{SOURCE22}
+mv pgvector-0.8.3 contrib/pgvector
+%endif
+
+%if %decoderbufs
+tar xzf %{SOURCE23}
+mv postgres-decoderbufs-3.5.2.Final contrib/decoderbufs
 %endif
 
 %build
@@ -816,6 +894,18 @@ upgrade_configure ()
 %make_build -C contrib/pgaudit
 %endif
 
+%if %pg_repack
+%make_build -C contrib/pg_repack
+%endif
+
+%if %pgvector
+%make_build -C contrib/pgvector
+%endif
+
+%if %decoderbufs
+%make_build -C contrib/decoderbufs
+%endif
+
 
 %install
 cd postgresql-setup-%{setup_version}
@@ -840,6 +930,18 @@ make DESTDIR=$RPM_BUILD_ROOT install-world
 
 %if %pgaudit
 make -C contrib/pgaudit DESTDIR=$RPM_BUILD_ROOT install
+%endif
+
+%if %pg_repack
+make -C contrib/pg_repack DESTDIR=$RPM_BUILD_ROOT install
+%endif
+
+%if %pgvector
+make -C contrib/pgvector DESTDIR=$RPM_BUILD_ROOT install
+%endif
+
+%if %decoderbufs
+make -C contrib/decoderbufs DESTDIR=$RPM_BUILD_ROOT install
 %endif
 
 # We ship pg_config through libpq-devel
@@ -1426,6 +1528,30 @@ make -C postgresql-setup-%{setup_version} check
 %endif
 %{_datadir}/pgsql/extension/pgaudit--*.sql
 %{_datadir}/pgsql/extension/pgaudit.control
+%endif
+
+%if %pg_repack
+%files -n %{pkgname}-pg-repack
+%license contrib/pg_repack/COPYRIGHT
+%{_bindir}/pg_repack
+%{_libdir}/pgsql/pg_repack.so
+%{_datadir}/pgsql/extension/pg_repack--*.sql
+%{_datadir}/pgsql/extension/pg_repack.control
+%endif
+
+%if %pgvector
+%files -n %{pkgname}-pgvector
+%license contrib/pgvector/LICENSE
+%{_libdir}/pgsql/vector.so
+%{_datadir}/pgsql/extension/vector--*.sql
+%{_datadir}/pgsql/extension/vector.control
+%{_includedir}/pgsql/server/extension/vector/vector.h
+%endif
+
+%if %decoderbufs
+%files -n %{pkgname}-decoderbufs
+%license contrib/decoderbufs/LICENSE
+%{_libdir}/pgsql/decoderbufs.so
 %endif
 
 
